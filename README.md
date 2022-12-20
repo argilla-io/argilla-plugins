@@ -9,11 +9,12 @@ Some of this pluggable method could be eventually integrated into the [core of A
 ## How to develop a plugin
 
 1. Pick a cool plugin from the list of topics or our issue overview.
-2. Refer to the solution in the issue
-   1. fork the repo
-   2. open a PR
-3. Think about an abstraction for the plugin as shown below
-4. Keep it simple -
+2. Think about an abstraction for the plugin as shown below.
+3. Refer to the solution in the issue.
+   1. fork the repo.
+   2. commit your code
+   3. open a PR.
+4. Keep it simple.
 5. Have fun.
 
 
@@ -21,7 +22,7 @@ Some of this pluggable method could be eventually integrated into the [core of A
 
 #### Function
 We want to to keep the plugins as abstract as possible, hence they have to be able to be used within 3 lines of code.
-```
+```python
 from argilla_plugins.topic import pluging
 plugin(name="dataset_name", ws="workspace" query="query", interval=1.0)
 plugin.start()
