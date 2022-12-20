@@ -23,7 +23,7 @@ Some of this pluggable method could be eventually integrated into the [core of A
 #### Function
 We want to to keep the plugins as abstract as possible, hence they have to be able to be used within 3 lines of code.
 ```python
-from argilla_plugins.topic import pluging
+from argilla_plugins.topic import plugin
 plugin(name="dataset_name", ws="workspace" query="query", interval=1.0)
 plugin.start()
 ```
