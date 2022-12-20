@@ -47,7 +47,7 @@ Plugins:
 A process during which a learning algorithm can interactively query a user (or some other information source) to label new data points.
 
 - [ ] active learning for `TextClassification`.
-  - [ ] `classy-classification`. [issue](https://github.com/argilla-io/argilla-plugins/issues/14)
+  - [#13] `classy-classification`. [issue](https://github.com/argilla-io/argilla-plugins/issues/13)
   - [ ] `small-text`. [issue](https://github.com/argilla-io/argilla-plugins/issues/15)
 - [ ] active learning for `TokenClassification`. [issue](https://github.com/argilla-io/argilla-plugins/issues/17)
 
