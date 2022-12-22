@@ -1,8 +1,8 @@
-import active_learning
-import datasets
-import inference
-import programmatic_labelling
-import reporting
+import argilla_plugins.active_learning
+import argilla_plugins.datasets
+import argilla_plugins.inference
+import argilla_plugins.programmatic_labelling
+import argilla_plugins.reporting
 
 __all__ = [
     "active_learning",
