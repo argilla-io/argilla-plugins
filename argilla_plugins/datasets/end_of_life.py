@@ -8,9 +8,10 @@ from argilla import listener
 
 def end_of_life(
     name: str = None,
+    query: str = None,
     end_of_life_in_seconds: int = None,
     end_of_life_in_datetime: datetime.datetime = None,
-    query: str = None,
+    discard_only: bool = False,
     *args,
     **kwargs,
 ):
@@ -18,10 +19,10 @@ def end_of_life(
     It deletes records from a dataset using a listener as background process
 
     :param name: (str) The name of the dataset to be deleted
-    :param ws: (str) The name of the dataset to be deleted
+    :param query: (str) A query to filter the records that will be deleted
     :param end_of_life_in_seconds: (int) The variable number of seconds after which records will be deleted
     :param end_of_life_in_datetime: (int) The fixed datetime when the records should be deleted
-    :param query: (str) A query to filter the records that will be deleted
+    :param discard_only: (bool) Not actually delete but only discard the records
     :param execution_interval_in_seconds: (int) The interval at which the plugin will be executed
     :param condition: (Any) A function that takes in a record and returns a boolean. If the function returns
     True, the record will be deleted
@@ -71,8 +72,6 @@ def end_of_life(
 
     query = " AND ".join(query_parts)
 
-    print(f"starting end of lifen listener with {query}")
-
     @listener(
         dataset=name,
         query=query,
@@ -83,12 +82,16 @@ def end_of_life(
     def plugin(records, ctx):
         # delete records
         ids = [rec.id for rec in records]
-        rg.delete_records(name=ctx.__listener__.dataset, ids=ids)
+        rg.delete_records(
+            name=ctx.__listener__.dataset, ids=ids, discard_only=discard_only
+        )
 
         # update datetime filter
         if ctx.query_params["end_of_life_date_seconds"]:
             ctx.query_params[
                 "end_of_life_date_seconds"
             ] = get_end_of_life_from_seconds()
+
+    print(f"created an end_of_life listener with {query}")
 
     return plugin
