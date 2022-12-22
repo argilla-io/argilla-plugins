@@ -82,6 +82,8 @@ A process during which a learning algorithm can interactively query a user (or s
 Automatically add predictions to records as they are logged into Argilla. This can be used for making it really easy to pre-annotated a dataset with an existing model or service.
 
 - [ ] inference with un-authenticated endpoint. [issue](https://github.com/argilla-io/argilla-plugins/issues/16)
+- [ ] embed incoming records in the background. [issue](https://github.com/argilla-io/argilla-plugins/issues/18)
+
 
 ### Training endpoints
 **What is it?** 
