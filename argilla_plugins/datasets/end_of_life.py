@@ -5,7 +5,10 @@ from typing import Any
 import argilla as rg
 from argilla import listener
 
+from argilla_plugins.utils.cli_tools import app
 
+
+@app.command()
 def end_of_life(
     name: str = None,
     query: str = None,
@@ -16,18 +19,18 @@ def end_of_life(
     **kwargs,
 ):
     """
-    It deletes records from a dataset using a listener as background process
+    It creates a listener that deletes records from a dataset that are older than a certain time
 
-    :param name: (str) The name of the dataset to be deleted
-    :param query: (str) A query to filter the records that will be deleted
-    :param end_of_life_in_seconds: (int) The variable number of seconds after which records will be deleted
-    :param end_of_life_in_datetime: (int) The fixed datetime when the records should be deleted
-    :param discard_only: (bool) Not actually delete but only discard the records
-    :param execution_interval_in_seconds: (int) The interval at which the plugin will be executed
-    :param condition: (Any) A function that takes in a record and returns a boolean. If the function returns
-    True, the record will be deleted
+    Args:
+      name (str): str = None,
+      query (str): a query string to filter the records that will be deleted.
+      end_of_life_in_seconds (int): the number of seconds after which the data will be deleted.
+      end_of_life_in_datetime (datetime.datetime): datetime.datetime = None,
+      discard_only (bool): if True, the records will be marked as deleted, but not actually deleted.
+    Defaults to False
 
-    :return: A function that takes in records and ctx and deletes the records.
+    Returns:
+      A function that takes in records and ctx and deletes the records.
     """
     if not any([end_of_life_in_seconds, end_of_life_in_datetime]):
         raise ValueError(
