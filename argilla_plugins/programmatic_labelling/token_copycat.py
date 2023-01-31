@@ -50,7 +50,7 @@ def token_copycat(
     if word_dict_kb_predictions is None:
         word_dict_kb_predictions = {}
 
-    log = logging.getLogger(f"token_classification_copycat | {name}")
+    log = logging.getLogger(f"token_copycat | {name}")
 
     @listener(
         dataset=name,
