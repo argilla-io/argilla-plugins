@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 import argilla as rg
 from argilla import listener
@@ -28,6 +29,8 @@ def end_of_life(
     Returns:
       A function that takes in records and ctx and deletes the records.
     """
+    log = logging.getLogger(f"end_of_life | {name}")
+
     if end_of_life_in_seconds is None:
         raise ValueError("Provide a `end_of_life_in_seconds`")
 
@@ -67,9 +70,11 @@ def end_of_life(
     def plugin(records, ctx):
         # delete records
         ids = [rec.id for rec in records]
-        rg.delete_records(
-            name=ctx.__listener__.dataset, ids=ids, discard_only=discard_only
-        )
+        if ids:
+            log.info("deleting %s records", len(ids))
+            rg.delete_records(
+                name=ctx.__listener__.dataset, ids=ids, discard_only=discard_only
+            )
 
         # update datetime filter
         if ctx.query_params["end_of_life_date_seconds"]:
@@ -77,6 +82,6 @@ def end_of_life(
                 "end_of_life_date_seconds"
             ] = get_end_of_life_from_seconds()
 
-    print(f"created an end_of_life listener with {query}")
+    log.info(f"created an end_of_life listener with {query}")
 
     return plugin
