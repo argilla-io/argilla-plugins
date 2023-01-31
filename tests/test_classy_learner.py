@@ -1,9 +1,16 @@
-from argilla_plugins.datasets import end_of_life
+from argilla_plugins import classy_learner
 
-plugin = end_of_life(
+plugin = classy_learner(
     name="plugin-test",
     query=None,
-    end_of_life_in_seconds=100,
+    model="all-MiniLM-L6-v2",
+    classy_config=None,
+    certainty_threshold=0,
+    overwrite_predictions=True,
+    sample_strategy="fifo",
+    min_n_samples=6,
+    max_n_samples=20,
+    batch_size=1000,
     execution_interval_in_seconds=5,
 )
 plugin.start()

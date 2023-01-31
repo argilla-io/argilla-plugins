@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "argilla-plugins"
-version = "0.1.0"
+version = "0.1.1"
 description = "🔌 Open-source plugins for with practical features for Argilla using listeners."
 authors = ["david <david.m.berenstein@gmail.com>"]
 license = "Apache 2.0"

@@ -130,9 +130,28 @@ A process during which a learning algorithm can interactively query a user (or s
 
 Plugins:
 - [ ] active learning for `TextClassification`.
-  - [ ] `classy-classification`. [issue](https://github.com/argilla-io/argilla-plugins/issues/13)
+  - [X] `classy-classification`. [issue](https://github.com/argilla-io/argilla-plugins/issues/13)
   - [ ] `small-text`. [issue](https://github.com/argilla-io/argilla-plugins/issues/15)
 - [ ] active learning for `TokenClassification`. [issue](https://github.com/argilla-io/argilla-plugins/issues/17)
+
+```python
+from argilla_plugins import classy_learner
+
+plugin = classy_learner(
+    name="plugin-test",
+    query=None,
+    model="all-MiniLM-L6-v2",
+    classy_config=None,
+    certainty_threshold=0,
+    overwrite_predictions=True,
+    sample_strategy="fifo",
+    min_n_samples=6,
+    max_n_samples=20,
+    batch_size=1000,
+    execution_interval_in_seconds=5,
+)
+plugin.start()
+```
 
 ### Inference endpoints
 **What is it?**
