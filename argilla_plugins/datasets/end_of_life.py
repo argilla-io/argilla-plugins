@@ -13,7 +13,6 @@ def end_of_life(
     name: str = None,
     query: str = None,
     end_of_life_in_seconds: int = None,
-    end_of_life_in_datetime: datetime.datetime = None,
     discard_only: bool = False,
     *args,
     **kwargs,
@@ -61,17 +60,6 @@ def end_of_life(
 
     else:
         start_end_of_life_date_seconds = None
-
-    # add end_of_life_in_datetime filter
-    if end_of_life_in_datetime:
-        assert isinstance(end_of_life_in_datetime, datetime.datetime), ValueError(
-            "`end_of_life_in_seconds`must be an datatime.datetime"
-        )
-        if end_of_life_in_datetime > datetime.datetime.now():
-            warnings.warn("Scheduling data deletion for a moment in the future.")
-        query_parts.append(
-            f"NOT event_timestamp:[{end_of_life_in_datetime.isoformat()} TO *]"
-        )
 
     query = " AND ".join(query_parts)
 
