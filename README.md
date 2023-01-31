@@ -65,8 +65,23 @@ Plugins:
 - [ ] remove duplicate records. [issue](https://github.com/argilla-io/argilla-plugins/issues/5)
 - [ ] create train test splits. [issue](https://github.com/argilla-io/argilla-plugins/issues/6)
 - [ ] set limits to records in datasets
-  - [ ] end of life time. [issue](https://github.com/argilla-io/argilla-plugins/issues/7)
+  - [X] end of life time. [issue](https://github.com/argilla-io/argilla-plugins/issues/7)
   - [ ] max # of records. [issue](https://github.com/argilla-io/argilla-plugins/issues/8)
+
+#### End of Life
+Automatically delete or discard records after `x` seconds.
+
+```python
+from argilla_plugins.datasets import end_of_life
+
+plugin = end_of_life(
+    name="plugin-test",
+    end_of_life_in_seconds=100,
+    execution_interval_in_seconds=5,
+    discard_only=False
+)
+plugin.start()
+```
 
 ### Programmatic Labelling
 

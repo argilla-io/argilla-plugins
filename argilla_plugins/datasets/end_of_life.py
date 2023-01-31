@@ -1,6 +1,4 @@
 import datetime
-import warnings
-from typing import Any
 
 import argilla as rg
 from argilla import listener
@@ -24,18 +22,14 @@ def end_of_life(
       name (str): str = None,
       query (str): a query string to filter the records that will be deleted.
       end_of_life_in_seconds (int): the number of seconds after which the data will be deleted.
-      end_of_life_in_datetime (datetime.datetime): datetime.datetime = None,
       discard_only (bool): if True, the records will be marked as deleted, but not actually deleted.
     Defaults to False
 
     Returns:
       A function that takes in records and ctx and deletes the records.
     """
-    if not any([end_of_life_in_seconds, end_of_life_in_datetime]):
-        raise ValueError(
-            "Provide at least one of the following variables `end_of_life_in_seconds`"
-            " and `end_of_life_in_date`"
-        )
+    if end_of_life_in_seconds is None:
+        raise ValueError("Provide a `end_of_life_in_seconds`")
 
     def get_end_of_life_from_seconds(seconds=end_of_life_in_seconds):
         return (
