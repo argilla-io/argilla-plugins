@@ -3,14 +3,11 @@ import re
 from typing import Any, Dict, List, Set, Tuple
 
 import argilla as rg
-import spacy.util
 from argilla import listener
-
-from argilla_plugins.utils.cli_tools import app
 
 
 def token_classification_copycat(
-    name: str = None,
+    name: str,
     query: str = None,
     copy_predictions: bool = True,
     word_dict_kb_annotations: dict = None,
@@ -219,16 +216,18 @@ def token_classification_copycat(
                 rec_predictions_old != rec.prediction
                 or rec_annotations_old != rec.annotation
             ):
+                print(rec_predictions_old)
+                print(rec.prediction)
                 updated_records.append(rec)
 
         if updated_records:
-            for an in updated_records[0].prediction:
-                print(updated_records[0].text[an[1] : an[2]])
-            print(updated_records[0].prediction)
-            print(updated_records[0].tokens)
-            exit()
+            # for an in updated_records[0].prediction:
+            #     print(updated_records[0].text[an[1] : an[2]])
+            # print(updated_records[0].prediction)
+            # print(updated_records[0].tokens)
+            # exit()
             rg.log(
-                records=updated_records[0],
+                records=updated_records,
                 name=ctx.__listener__.dataset,
                 verbose=False,
             )

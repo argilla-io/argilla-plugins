@@ -8,7 +8,7 @@ from argilla_plugins.utils.cli_tools import app
 
 @app.command()
 def end_of_life(
-    name: str = None,
+    name: str,
     query: str = None,
     end_of_life_in_seconds: int = None,
     discard_only: bool = False,
@@ -19,7 +19,7 @@ def end_of_life(
     It creates a listener that deletes records from a dataset that are older than a certain time
 
     Args:
-      name (str): str = None,
+      name (str): str, the name of the dataset to which the plugin will be applied.
       query (str): a query string to filter the records that will be deleted.
       end_of_life_in_seconds (int): the number of seconds after which the data will be deleted.
       discard_only (bool): if True, the records will be marked as deleted, but not actually deleted.
