@@ -1,4 +1,5 @@
 import copy
+import logging
 import re
 import string
 from typing import Any, Dict, List, Set, Tuple
@@ -7,7 +8,7 @@ import argilla as rg
 from argilla import listener
 
 
-def token_classification_copycat(
+def token_copycat(
     name: str,
     query: str = None,
     copy_predictions: bool = True,
@@ -24,19 +25,20 @@ def token_classification_copycat(
     word_dict. If there is, we add the label and the span to the record
 
     Args:
-        name (str): the name of the dataset to which the plugin will be applied
+        name (str): the name of the dataset to which the plugin will be applied.
         query (str): str = None,
         copy_predictions (bool): if True, the predictions from the KB will be copied to the current
         record. Defaults to True
         word_dict_kb_annotations (dict): dict = None, a dictionary of words and their annotations {"key": {"label": "label", "score": 0}}
         copy_annotations (bool): if True, the annotations from the KB will be copied to the record.
         word_dict_kb_predictions (dict): dict = None, a dictionary of words and their predictions {"key": {"label": "label", "score": 0}}
-        Defaults to False
-        included_labels (list): list = None,
+            Defaults to False
+        included_labels (list): list = None, a list of labels that will be copied from the KB to the record
+        case_sensitive (bool): bool = True, if True, the word_dict matching will be case sensitive. Defaults to True
 
     Returns:
-      A function that takes in a dataset and a context and returns a dataset with the annotations and
-    predictions copied from the knowledge base.
+        A function that takes in a dataset and a context and returns a dataset with the annotations and
+        predictions copied from the knowledge base.
     """
 
     assert any([copy_predictions, copy_annotations]), ValueError(
@@ -47,6 +49,8 @@ def token_classification_copycat(
         word_dict_kb_annotations = {}
     if word_dict_kb_predictions is None:
         word_dict_kb_predictions = {}
+
+    log = logging.getLogger(f"token_classification_copycat | {name}")
 
     @listener(
         dataset=name,
@@ -224,22 +228,17 @@ def token_classification_copycat(
                 rec_predictions_old != rec.prediction
                 or rec_annotations_old != rec.annotation
             ):
-                print(rec.prediction)
-                print([rec.text[an[1] : an[2]] for an in rec.prediction])
                 rec = rec.__class__(**rec.__dict__)
                 updated_records.append(rec)
 
         if updated_records:
-            # for an in updated_records[0].prediction:
-            #     print(updated_records[0].text[an[1] : an[2]])
-            # print(updated_records[0].prediction)
-            # print(updated_records[0].tokens)
-            exit()
+            log.info(f"updating {len(updated_records)} records")
             rg.log(
                 records=updated_records,
                 name=ctx.__listener__.dataset,
                 verbose=False,
             )
 
-    print("copycat ready to mimick your annotations and predictions")
+    log.info(f"copycat ready to mimick your annotations and predictions {query}.")
+
     return plugin

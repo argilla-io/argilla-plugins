@@ -97,10 +97,31 @@ plugin.start()
 Automatically update `annotations` and `predictions` labels and predictions of `records` based on heuristics.
 
 Plugins:
-- [ ] annotated spans as gazzetteer for labelling. [issue](https://github.com/argilla-io/argilla-plugins/issues/12)
+- [X] annotated spans as gazzetteer for labelling. [issue](https://github.com/argilla-io/argilla-plugins/issues/12)
 - [ ] vector search queries and similarity threshold. [issue](https://github.com/argilla-io/argilla-plugins/issues/11)
 - [ ] use gazzetteer for labelling. [issue](https://github.com/argilla-io/argilla-plugins/issues/9)
 - [ ] materialize annotations/predictions from rules using Snorkel or a MajorityVoter [issue](https://github.com/argilla-io/argilla-plugins/issues/10)
+
+#### Token Copycat
+
+If we annotate spans for texts like NER, we are relatively certain that these spans should be annotated the same throughout the entire dataset. We could use this assumption to already start annotating or predicting previously unseen data.
+
+```python
+from argilla_plugins import token_copycat
+
+plugin = token_copycat(
+    name="plugin-test",
+    query=None,
+    copy_predictions=True,
+    word_dict_kb_predictions={"key": {"label": "label", "score": 0}},
+    copy_annotations=True,
+    word_dict_kb_annotations={"key": {"label": "label", "score": 0}},
+    included_labels=["label"],
+    case_sensitive=True,
+    execution_interval_in_seconds=1,
+)
+plugin.start()
+```
 
 ### Active learning
 
