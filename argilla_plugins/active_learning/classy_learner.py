@@ -1,3 +1,4 @@
+import logging
 from collections import Counter
 
 import argilla as rg
@@ -38,7 +39,7 @@ def classy_learner(
         max_n_samples (int, optional): Maximum nunmber of data samples per class to use during inference. Defaults to 20.
     """
     import_package("classy_classification")
-
+    log = logging.getLogger(f"classy_learner | {name}")
     from classy_classification import ClassyClassifier
 
     assert min_n_samples > 0, ValueError("`min_n_samples` must be positive")
@@ -166,10 +167,12 @@ def classy_learner(
                     if updated_records:
                         rg.log(records, name=ctx.__listener__.dataset)
                 else:
-                    print("No records to annotate")
+                    log.info("No records to annotate")
             else:
-                print(f"Not enough samples to train model. {counter}")
+                log.info(f"Not enough samples to train model. {counter}")
         else:
-            print("waiting for annotations")
+            log.info("waiting for annotations")
+
+    log.info(f"created an classy_learner listener with {query}")
 
     return plugin
