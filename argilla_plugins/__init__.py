@@ -16,7 +16,7 @@ __all__ = [
     "end_of_life",
     "classy_learner",
     "token_copycat",
-    "inference",
+    "embedder",
     "programmatic_labelling",
 ]
 
