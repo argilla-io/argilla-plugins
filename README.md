@@ -6,6 +6,24 @@
 The design of Argilla is intentionally programmable (i.e., developers can build complex workflows for reading and updating datasets). However, there are certain workflows and features which are shared across different use cases and could be simplified from a developer experience perspective. In order to facilitate the reuse of key workflows and empower the community, Argilla Plugins provides a collection of extensions to super power your Argilla use cases.
 Some of this pluggable method could be eventually integrated into the [core of Argilla](https://github.com/argilla-io/argilla).
 
+## Quickstart
+
+```bash
+pip install argilla-plugins
+```
+
+```python
+from argilla_plugins.datasets import end_of_life
+
+plugin = end_of_life(
+    name="plugin-test",
+    end_of_life_in_seconds=100,
+    execution_interval_in_seconds=5,
+    discard_only=False
+)
+plugin.start()
+```
+
 ## How to develop a plugin
 
 1. Pick a cool plugin from the list of topics or our issue overview.
@@ -15,16 +33,6 @@ Some of this pluggable method could be eventually integrated into the [core of A
    2. commit your code
    3. open a PR.
 4. Keep it simple.
-5. Have fun.
-
-## How to develop a plugin
-
-1. Pick a cool plugin from the list of topics or our issue overview.
-2. Refer to the solution in the issue
-   1. fork the repo
-   2. open a PR
-3. Think about an abstraction for the plugin as shown below
-4. Keep it simple -
 5. Have fun.
 
 
