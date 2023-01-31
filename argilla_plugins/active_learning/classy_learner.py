@@ -96,17 +96,24 @@ def classy_learner(
                     if len(data[key]) <= max_n_samples:
                         data[key].append(value)
 
+                # re-initialize classifier if there is new data
                 if ctx.query_params["data"] == data:
                     classy_classifier = ctx.query_params["classy_classifier"]
                 else:
-                    ctx.query_params["_idx"] = ctx.query_params["_idx"] + 1
-                    classy_classifier = ClassyClassifier(
-                        model=model,
-                        data=data,
-                        multi_label=multi_label,
-                        config=classy_config,
-                        verbose=True,
-                    )
+                    if ctx.query_params["classy_classifier"] is None:
+                        classy_classifier = ClassyClassifier(
+                            model=model,
+                            data=data,
+                            multi_label=multi_label,
+                            config=classy_config,
+                            verbose=True,
+                        )
+                    else:
+                        # update version _idx when new data is added
+                        ctx.query_params["_idx"] = ctx.query_params["_idx"] + 1
+                        classy_classifier = ctx.query_params["classy_classifier"]
+                        classy_classifier.set_training_data(data=data)
+
                 ctx.query_params["data"] = data
                 ctx.query_params["classy_classifier"] = classy_classifier
 
@@ -155,7 +162,9 @@ def classy_learner(
                     for rec in updated_records:
                         rec.metadata["_idx"] = ctx.query_params["_idx"]
 
-                    rg.log(records, name=ctx.__listener__.dataset)
+                    # log data for updated records
+                    if updated_records:
+                        rg.log(records, name=ctx.__listener__.dataset)
                 else:
                     print("No records to annotate")
             else:
