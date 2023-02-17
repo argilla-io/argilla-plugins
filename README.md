@@ -71,7 +71,7 @@ Plugins:
   - [ ] directional A->B. [issue](https://github.com/argilla-io/argilla-plugins/issues/3)
   - [ ] bi-directional A <-> B. [issue](https://github.com/argilla-io/argilla-plugins/issues/4)
 - [ ] remove duplicate records. [issue](https://github.com/argilla-io/argilla-plugins/issues/5)
-- [ ] create train test splits. [issue](https://github.com/argilla-io/argilla-plugins/issues/6)
+- [X] create train test splits. [issue](https://github.com/argilla-io/argilla-plugins/issues/6)
 - [ ] set limits to records in datasets
   - [X] end of life time. [issue](https://github.com/argilla-io/argilla-plugins/issues/7)
   - [ ] max # of records. [issue](https://github.com/argilla-io/argilla-plugins/issues/8)
