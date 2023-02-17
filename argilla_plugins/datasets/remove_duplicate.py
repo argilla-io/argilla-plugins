@@ -1,6 +1,6 @@
 import logging
 
-import argilla as rg
+import argilla as ar
 from argilla import listener
 
 from argilla_plugins.utils.cli_tools import app
@@ -15,7 +15,7 @@ def remove_duplicate(
     **kwargs,
 ):
     """
-    It creates a listener that deletes records from a dataset that are older than a certain time
+    It creates a listener that deletes records from a dataset if their content is similar to other records.
 
     Args:
       name (str): str, the name of the dataset to which the plugin will be applied.
@@ -38,7 +38,7 @@ def remove_duplicate(
     @listener(
         dataset=name,
         query=query,
-        condition=lambda search: search.total > 2
+        # condition=lambda search: search.total > 2
         *args,
         **kwargs,
     )
@@ -49,16 +49,17 @@ def remove_duplicate(
             rec_text = rec.text
             if rec_text is not None:
                 if rec_text in known_texts:
-                    log.debug(f"Marking {rec.id} as duplicated")
                     duplicated_ids.add(rec.id)
                 else:
                     known_texts.add(rec_text)
 
+        log.debug(f"Found {len(duplicated_ids)} duplicatas")
+        log.debug(duplicated_ids)
         if duplicated_ids:
             log.info("deleting %s records", len(duplicated_ids))
-            rg.delete_records(
+            ar.delete_records(
                 name=ctx.__listener__.dataset,
-                ids=duplicated_ids,
+                ids=list(duplicated_ids),
                 discard_only=discard_only,
             )
 
