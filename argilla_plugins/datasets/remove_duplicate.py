@@ -38,7 +38,7 @@ def remove_duplicate(
     @listener(
         dataset=name,
         query=query,
-        # condition=lambda search: search.total > 2
+        condition=lambda search: search.total > 2
         *args,
         **kwargs,
     )
@@ -63,6 +63,6 @@ def remove_duplicate(
                 discard_only=discard_only,
             )
 
-    log.info(f"created an remove_duplicate listener with {query}")
+    log.info(f"created a remove_duplicate listener with {query}")
 
     return plugin

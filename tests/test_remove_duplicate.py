@@ -47,31 +47,3 @@ def test_remove_duplicate(mocked_client):
             unique_content.add(rec.text)
     assert len(unique_content) == 3
     assert number_active_records == 3
-
-    # ds = ar.DatasetForTextClassification(
-    #     records=records,
-    # )
-    #
-    # listener = remove_duplicate(
-    #     ds_name,
-    #     execution_interval_in_seconds=1
-    # )
-    # listener.start()
-    # listener.stop()
-    #
-    # # import pdb
-    # # pdb.set_trace()
-    #
-    # number_active_records = 0
-    # unique_content = set()
-    # for rec in ds:
-    #     print(f"res: {rec.text} - {rec.status}")
-    #     if rec.status == "Default":
-    #         number_active_records += 1
-    #         unique_content.add(rec.text)
-    # assert len(unique_content) == 3
-    # assert number_active_records == 3
-
-    assert False
-
-
