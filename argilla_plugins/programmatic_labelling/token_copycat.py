@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Set, Tuple
 
 import argilla as rg
 from argilla import listener
+from argilla.utils.span_utils import SpanUtils
 
 
 def token_copycat(
@@ -44,11 +45,24 @@ def token_copycat(
     assert any([copy_predictions, copy_annotations]), ValueError(
         "choose to use at least one of the copy_prediction or copy_annotations"
     )
-
+    seen_words = set()
     if word_dict_kb_annotations is None:
         word_dict_kb_annotations = {}
     if word_dict_kb_predictions is None:
         word_dict_kb_predictions = {}
+
+    query_part = []
+    if copy_predictions:
+        query_part.append("(annotated_as: *)")
+    if copy_annotations:
+        query_part.append("(predicted_as: *)")
+    if query_part:
+        query_part = " OR ".join(query_part)
+
+    if query_part and query:
+        query = f"{query} AND ({query_part})"
+    elif query_part:
+        query = query_part
 
     log = logging.getLogger(f"token_copycat | {name}")
 
@@ -61,61 +75,6 @@ def token_copycat(
         word_dict_kb_annotations=word_dict_kb_annotations,
     )
     def plugin(records, ctx):
-        def get_spans_from_tokens(tokens: List[str]):
-            """
-            get [(start, end)] for each token w.r.t. the entire list of tokens
-            """
-            spans = []
-            start = 0
-            for token in tokens:
-                end = start + len(token)
-                spans.append((start, end))
-                start = end
-            return spans
-
-        def get_all_combinations_of_adjacent_spans(spans: List[tuple]) -> List[tuple]:
-            """
-            Takes a list of adjacent spans and returns a list of all the combinations of adjacent spans.
-            """
-            combinations = []
-            for i in range(len(spans)):
-                for j in range(i + 1, len(spans) + 1):
-                    # TODO: this is a hack to avoid combinations that are too long
-                    if spans[j - 1][1] - spans[i][0] > 50:
-                        break
-                    combinations.append(spans[i:j])
-            start_end_combinations = []
-            for combination in combinations:
-                start_end_combinations.append((combination[0][0], combination[-1][1]))
-            return start_end_combinations
-
-        def check_alignment_span_with_list_of_spans(
-            spans: List[tuple], allowed_spans: List[tuple]
-        ) -> bool:
-            """
-            Check if a span is aligned with a range of one or more of a list of adjacent spans.
-            """
-            accepted_spans = []
-            for span in spans:
-                if span in allowed_spans:
-                    accepted_spans.append(True)
-                else:
-                    accepted_spans.append(False)
-
-            return accepted_spans
-
-        def validate_token_boundary(record_info, tokens):
-            spans = get_spans_from_tokens(tokens)
-            allowed_spans = get_all_combinations_of_adjacent_spans(spans)
-            optional_spans = [(rec[1], rec[2]) for rec in record_info]
-            span_mask = check_alignment_span_with_list_of_spans(
-                optional_spans, allowed_spans
-            )
-            accepted_spans = [
-                span for span, mask in zip(record_info, span_mask) if mask
-            ]
-            return accepted_spans
-
         def apply_word_dict_kb(
             rec: Any, word_dict: Dict[str, Dict[str, Any]]
         ) -> List[Tuple[str, int, int, float]]:
@@ -123,6 +82,7 @@ def token_copycat(
             For each know label and known word, get the character span from the text and assign it to the predictions as
             [(label, start, end, 0)]
             """
+            util_rec = SpanUtils(rec.text, rec.tokens)
             record_info = []
             for word, word_info in word_dict.items():
                 if (
@@ -144,9 +104,13 @@ def token_copycat(
                         if (
                             rec.text[end] not in string.ascii_letters
                         ):  # ensure it is not a subword
-                            record_info.append(
-                                (word_info["label"], s, end, word_info["score"])
-                            )
+                            try:
+                                util_rec.validate([(word_info["label"], s, end)])
+                                record_info.append(
+                                    (word_info["label"], s, end, word_info["score"])
+                                )
+                            except Exception:
+                                pass
             return record_info
 
         def update_word_dict_kb(
@@ -166,6 +130,7 @@ def token_copycat(
                 if included_labels is not None and label not in included_labels:
                     continue
                 word = rec.text[start:end]
+                seen_words.add(word)
                 word_dict[word] = {"label": label, "score": score}
             return word_dict
 
@@ -178,10 +143,8 @@ def token_copycat(
             Then this function checks if there is an overlap between the spans.
             The longest span is kept and the other is removed.
             """
-            get_sort_key = lambda record_info: (
-                record_info[2] - record_info[1],
-                -record_info[1],
-            )
+            def get_sort_key(record_info):
+                return record_info[2] - record_info[1], -record_info[1]
             sorted_spans = sorted(record_info, key=get_sort_key, reverse=True)
             result = []
             seen_tokens: Set[int] = set()
@@ -205,25 +168,30 @@ def token_copycat(
                     rec, rec.annotation, ctx.query_params["word_dict_kb_annotations"]
                 )
 
+        query_relevant = f'status: Default AND ({" OR ".join(list(seen_words))})'
+
+
         # update the kb_info in the record
+        new_records = rg.load(ctx.__listener__.dataset, query=query_relevant)
         updated_records = []
-        for rec in records:
+        for rec in new_records:
             rec_predictions_old = copy.deepcopy(rec.prediction)
             rec_annotations_old = copy.deepcopy(rec.annotation)
             if copy_predictions:
-                record_info = apply_word_dict_kb(
+                validated_spans = apply_word_dict_kb(
                     rec, ctx.query_params["word_dict_kb_predictions"]
                 )
-                validated_spans = validate_token_boundary(record_info, rec.tokens)
+                if rec.prediction is None:
+                    rec.prediction = []
                 rec.prediction += validated_spans
                 rec.prediction = resolve_span_overlap(rec.prediction)
             if copy_annotations:
-                record_info = apply_word_dict_kb(
+                validated_spans = apply_word_dict_kb(
                     rec, ctx.query_params["word_dict_kb_annotations"]
                 )
-                validated_spans = validate_token_boundary(record_info, rec.tokens)
-                rec.annotation += validated_spans
-                rec.annotation = resolve_span_overlap(rec.annotation)
+                if rec.annotation is None:
+                    rec.annotation = []
+                rec.annotation = resolve_span_overlap(rec.annotation + [span[:-1] for span in validated_spans])
             if (
                 rec_predictions_old != rec.prediction
                 or rec_annotations_old != rec.annotation
@@ -237,6 +205,7 @@ def token_copycat(
                 records=updated_records,
                 name=ctx.__listener__.dataset,
                 verbose=False,
+                chunk_size=20
             )
 
     log.info(f"copycat ready to mimick your annotations and predictions {query}.")

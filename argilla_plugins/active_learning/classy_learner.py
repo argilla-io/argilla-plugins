@@ -15,7 +15,7 @@ def classy_learner(
     certainty_threshold: float = 0,
     overwrite_predictions: bool = True,
     sample_strategy="fifo",
-    min_n_samples: int = 6,
+    min_n_samples: int = 8,
     max_n_samples=20,
     batch_size=1000,
     *args,
@@ -66,7 +66,7 @@ def classy_learner(
         **kwargs,
         data={},
         classy_classifier=None,
-        _idx=0,
+        idx=0,
     )
     def plugin(records, ctx):
         if records:
@@ -92,26 +92,28 @@ def classy_learner(
             counter = dict(Counter(annotations))
             if all([v >= min_n_samples for v in counter.values()]):
                 # format data for classy-classification
-                data = dict.fromkeys(counter.keys(), [])
+                data = {}
+                for key in counter.keys():
+                    data[key] = []
                 for key, value in zip(annotations, texts):
                     if len(data[key]) <= max_n_samples:
                         data[key].append(value)
-
                 # re-initialize classifier if there is new data
                 if ctx.query_params["data"] == data:
                     classy_classifier = ctx.query_params["classy_classifier"]
                 else:
+                    log.info("Fitting classifier on new data...")
                     if ctx.query_params["classy_classifier"] is None:
                         classy_classifier = ClassyClassifier(
                             model=model,
                             data=data,
                             multi_label=multi_label,
                             config=classy_config,
-                            verbose=True,
+                            verbose=False,
                         )
                     else:
-                        # update version _idx when new data is added
-                        ctx.query_params["_idx"] = ctx.query_params["_idx"] + 1
+                        # update version idx when new data is added
+                        ctx.query_params["idx"] = ctx.query_params["idx"] + 1
                         classy_classifier = ctx.query_params["classy_classifier"]
                         classy_classifier.set_training_data(data=data)
 
@@ -119,21 +121,22 @@ def classy_learner(
                 ctx.query_params["classy_classifier"] = classy_classifier
 
                 relevant_batch_query = (
-                    f"({query}) AND ((metadata._idx:"
-                    f" {ctx.query_params['_idx']}) OR (NOT"
-                    " metadata._idx: *))"
+                    f"({query}) AND ((metadata.idx:"
+                    f" {ctx.query_params['idx']}) OR (NOT"
+                    " metadata.idx: *))"
                 )
-                records = rg.load(
+                records_new = rg.load(
                     name=ctx.__listener__.dataset,
                     query=relevant_batch_query,
                     limit=batch_size,
                 )
 
-                if records:
+                if records_new:
                     updated_records = []
-                    texts = [rec.text for rec in records]
+                    texts = [rec.text for rec in records_new]
                     predictions = classy_classifier.pipe(texts)
-                    for rec, pred in zip(records, predictions):
+
+                    for rec, pred in zip(records_new, predictions):
                         max_new_pred = pred[max(pred, key=pred.get)]
                         max_old_pred = 0
 
@@ -159,13 +162,19 @@ def classy_learner(
                                 rec.prediction = pred
                                 updated_records.append(rec)
 
-                    # update _idx for record
+                    # update idx for record
                     for rec in updated_records:
-                        rec.metadata["_idx"] = ctx.query_params["_idx"]
+                        rec.metadata["idx"] = ctx.query_params["idx"]
 
                     # log data for updated records
                     if updated_records:
-                        rg.log(records, name=ctx.__listener__.dataset)
+                        rg.log(
+                            records=updated_records,
+                            name=str(ctx.__listener__.dataset),
+                            verbose=True,
+                            chunk_size=1,
+                            background=True,
+                        )
                 else:
                     log.info("No records to annotate")
             else:
