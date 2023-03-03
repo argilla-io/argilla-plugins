@@ -168,7 +168,7 @@ def token_copycat(
                     rec, rec.annotation, ctx.query_params["word_dict_kb_annotations"]
                 )
 
-        query_relevant = f'status: Default AND ({" OR ".join(list(seen_words))})'
+        query_relevant = f'({" OR ".join(list(seen_words))})'
 
 
         # update the kb_info in the record
