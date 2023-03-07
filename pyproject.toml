@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "argilla-plugins"
-version = "0.1.1"
+version = "0.1.3"
 description = "🔌 Open-source plugins for with practical features for Argilla using listeners."
 authors = ["david <david.m.berenstein@gmail.com>"]
 license = "Apache 2.0"
@@ -9,13 +9,15 @@ packages = [{include = "argilla_plugins"}]
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.11.0"
-argilla = {extras = ["listeners"], version = "^1.1.1"}
+argilla = {extras = ["listeners"], version = "^1.3.0"}
 typer = "^0.7.0"
 rich = {extras = ["jupyter"], version = "^13.0.0"}
 
 # optionals reporting
 datapane = { version = "^0.15.5", optional = true }
 great-expectations = { version = "^0.15", optional = true }
+classy-classification = "^0.6.2"
+asyncio = "^3.4.3"
 
 [tool.poetry.extras]
 reporting-datapane = ["datapane"]
