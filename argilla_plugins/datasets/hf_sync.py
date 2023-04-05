@@ -1,18 +1,17 @@
-import dataclasses
+import logging
 import os
 import time
 from threading import Thread
 from typing import Optional, Set
 
-from datasets import Dataset, load_dataset
-
 import argilla as rg
 from argilla.client.sdk.commons.errors import NotFoundApiError
 from argilla.server.commons.models import TaskType
+from datasets import Dataset, load_dataset
+from pydantic import BaseSettings, root_validator
 
 
-@dataclasses.dataclass
-class Config:
+class HuggingfaceSyncConfig(BaseSettings):
 
     hf_source: Optional[str] = None
     hf_target: Optional[str] = None
@@ -20,7 +19,7 @@ class Config:
     hf_split: str = "train"
     hf_push_to_hub_frequency: int = 60
 
-    rg_task: TaskType = TaskType.text_classification
+    rg_task: TaskType
     rg_dataset: Optional[str] = None
     rg_query: Optional[str] = None
     rg_labels: Optional[Set[str]] = None
@@ -28,36 +27,61 @@ class Config:
     rg_log_batch_size: int = 200
     rg_load_batch_size: int = 200
 
-    def __post_init__(self):
+    @root_validator
+    def validate_config(cls, values):
 
-        if not (self.hf_source or self.hf_target or self.rg_dataset):
+        hf_source = values.get("hf_source")
+        hf_target = values.get("hf_target")
+        rg_dataset = values.get("rg_dataset")
+
+        if not (hf_source or hf_target or rg_dataset):
             raise ValueError("Must specify a source/target dataset or an rg_dataset")
 
-        if not self.rg_dataset:
-            dataset_name = self.hf_target or self.hf_source
-            self.rg_dataset = dataset_name.split("/")[-1]
+        if not rg_dataset:
+            dataset_name = hf_target or hf_source
+            rg_dataset = dataset_name.split("/")[-1]
 
-        if not self.hf_target:
-            self.hf_target = self.hf_source or self.rg_dataset  # must provide an org????
+        if not hf_target:
+            hf_target = hf_source or rg_dataset  # must provide an org????
 
-        self.hf_token = self.hf_token or os.environ.get("HF_TOKEN")
+        values["rg_dataset"] = rg_dataset
+        values["hf_target"] = hf_target
+
+        return values
+
 
 
 class HuggingfaceSync(Thread):
-    def __init__(self, config: Config, *args, **kwargs):
+
+    _LOGGER = logging.getLogger("plugins.HuggingfaceSync")
+
+    def __init__(self, config: HuggingfaceSyncConfig, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._config = config
-        self.stop = False
+        self._stop = False
+
+    @property
+    def is_running(self):
+        return not self._stop
 
     def run(self) -> None:
 
-        self.import_data()
+        self._import_data()
+        while not self._stop:
+            try:
+                time.sleep(self._config.hf_push_to_hub_frequency)
+                self._export_data()
+            except Exception as error:
+                self._LOGGER.warning(f"Cannot export data: {error}")
 
-        while not self.stop:
-            time.sleep(self._config.hf_push_to_hub_frequency)
-            self.export_data()
 
-    def import_data(self):
+    def stop(self):
+        if self._stop:
+            raise RuntimeError("Plugin already stopped")
+
+        self._stop = False
+
+    def _import_data(self):
         """Import data from HF hub to Argilla"""
 
         if not self._exist_argilla_dataset():
@@ -77,19 +101,19 @@ class HuggingfaceSync(Thread):
 
             self._log_hf_dataset(target_ds)
 
-    def export_data(self):
+    def _export_data(self):
         """Export data from Argilla to HF hub"""
         if not self._config.hf_token:
             return
 
-        rg_dataset = rg.load(
-            self._config.rg_dataset,
-            query=self._config.rg_query,
-            batch_size=self._config.rg_load_batch_size,
-        )
+        rg_dataset = None
+        if self._exist_argilla_dataset():
+            rg_dataset = rg.load(
+                self._config.rg_dataset, query=self._config.rg_query, batch_size=self._config.rg_load_batch_size
+            )
 
-        if not rg_dataset:
-            return
+            if not rg_dataset:
+                return
 
         hf_dataset = rg_dataset.to_datasets()
         hf_dataset.push_to_hub(self._config.hf_target, token=self._config.hf_token, split=self._config.hf_split)
@@ -147,39 +171,8 @@ class HuggingfaceSync(Thread):
         rg.configure_dataset(name=self._config.rg_dataset, settings=settings_cls(label_schema=labels))
 
 
-def hf_sync(
-    hf_source: Optional[str] = None,
-    hf_target: Optional[str] = None,
-    hf_token: Optional[str] = None,
-    hf_split: str = "train",
-    hf_push_to_hub_frequency: int = 60,
-
-    rg_task: TaskType = TaskType.text_classification,
-    rg_dataset: Optional[str] = None,
-    rg_query: Optional[str] = None,
-    rg_labels: Optional[Set[str]] = None,
-    rg_multi_label_dataset: Optional[bool] = None,
-    rg_log_batch_size: int = 200,
-    rg_load_batch_size: int = 200,
-):
+def hf_sync(config: HuggingfaceSyncConfig):
     """Syncs an Argilla dataset with a dataset in HF"""
 
-    config = Config(
-        hf_source=hf_source,
-        hf_target=hf_target,
-        hf_token=hf_token,
-        hf_split=hf_split,
-        hf_push_to_hub_frequency=hf_push_to_hub_frequency,
-
-        rg_task=rg_task,
-        rg_dataset=rg_dataset,
-        rg_query=rg_query,
-        rg_labels=rg_labels,
-        rg_multi_label_dataset=rg_multi_label_dataset,
-        rg_log_batch_size=rg_log_batch_size,
-        rg_load_batch_size=rg_load_batch_size,
-    )
-
     plugin = HuggingfaceSync(config)
-
     return plugin
