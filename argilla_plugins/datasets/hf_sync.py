@@ -1,5 +1,6 @@
 import logging
 import os
+import threading
 import time
 from threading import Thread
 from typing import Optional, Set
@@ -50,7 +51,6 @@ class HuggingfaceSyncConfig(BaseSettings):
         return values
 
 
-
 class HuggingfaceSync(Thread):
 
     _LOGGER = logging.getLogger("plugins.HuggingfaceSync")
@@ -58,28 +58,23 @@ class HuggingfaceSync(Thread):
     def __init__(self, config: HuggingfaceSyncConfig, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._config = config
-        self._stop = False
-
-    @property
-    def is_running(self):
-        return not self._stop
+        self._stop_event = threading.Event()
 
     def run(self) -> None:
 
         self._import_data()
-        while not self._stop:
+        while not self._stop_event.is_set():
             try:
                 time.sleep(self._config.hf_push_to_hub_frequency)
                 self._export_data()
             except Exception as error:
                 self._LOGGER.warning(f"Cannot export data: {error}")
 
-
     def stop(self):
-        if self._stop:
+        if self._stop_event.is_set():
             raise RuntimeError("Plugin already stopped")
 
-        self._stop = False
+        self._stop_event.set()
 
     def _import_data(self):
         """Import data from HF hub to Argilla"""
