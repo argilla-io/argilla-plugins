@@ -171,8 +171,8 @@ class HuggingfaceSync(Thread):
         rg.configure_dataset(name=self._config.rg_dataset, settings=settings_cls(label_schema=labels))
 
 
-def hf_sync(config: HuggingfaceSyncConfig):
+def hf_sync(config: Optional[HuggingfaceSyncConfig] = None):
     """Syncs an Argilla dataset with a dataset in HF"""
 
-    plugin = HuggingfaceSync(config)
+    plugin = HuggingfaceSync(config or HuggingfaceSyncConfig())
     return plugin
